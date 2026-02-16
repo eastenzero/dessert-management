@@ -1,14 +1,14 @@
 graph LR
-    Start(开始) --> Register[用户注册]
-    Register --> Login[用户登录]
-    Login -->|成功| Dashboard[系统首页]
-    Login -->|失败| Retry[重试]
+    Start("开始") --> Register["用户注册"]
+    Register --> Login["用户登录"]
+    Login -->|成功| Dashboard["系统首页"]
+    Login -->|失败| Retry["重试"]
     
-    Dashboard --> Modules{功能模块}
-    Modules -->|甜点管理| Dessert[甜品增删改查]
-    Modules -->|分类管理| Category[分类维护]
-    Modules -->|员工/部门| Employee[人员组织管理]
+    Dashboard --> Modules{"功能模块"}
+    Modules -->|甜点管理| Dessert["甜品增删改查"]
+    Modules -->|分类管理| Category["分类维护"]
+    Modules -->|员工/部门| Employee["人员组织管理"]
     
-    Dessert --> DB[(数据库)]
+    Dessert --> DB[("数据库")]
     Category --> DB
     Employee --> DB

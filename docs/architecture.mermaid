@@ -1,13 +1,13 @@
 graph TD
-    User[用户 (Browser)] -->|HTTP Request| Frontend[前端 (Vue.js + Vite)]
-    Frontend -->|Axios /api| Nginx[反向代理/DevServer]
-    Nginx -->|REST API| Backend[后端 (Spring Boot)]
+    User["用户 (Browser)"] -->|HTTP Request| Frontend["前端 (Vue.js + Vite)"]
+    Frontend -->|Axios /api| Nginx["反向代理/DevServer"]
+    Nginx -->|REST API| Backend["后端 (Spring Boot)"]
     
     subgraph "后端服务 Layer"
-        Backend -->|Auth| Security[Spring Security/Interceptor]
-        Backend -->|Controller| Web[Web Controller]
-        Web -->|Service| Business[业务逻辑 Service]
-        Business -->|Mapper| DataAccess[MyBatis Mapper]
+        Backend -->|Auth| Security["Spring Security/Interceptor"]
+        Backend -->|Controller| Web["Web Controller"]
+        Web -->|Service| Business["业务逻辑 Service"]
+        Business -->|Mapper| DataAccess["MyBatis Mapper"]
     end
     
-    DataAccess -->|JDBC| Database[(数据库 MySQL/H2)]
+    DataAccess -->|JDBC| Database[("数据库 MySQL/H2")]
