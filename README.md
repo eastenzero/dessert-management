@@ -99,7 +99,6 @@ cd dessert-management
 ### 2. Backend Startup (启动后端)
 The project is configured to use **H2 Database** by default for easy reproduction.
 ```bash
-cd prj-backend
 ```bash
 cd prj-backend
 mvn spring-boot:run

@@ -1,0 +1,40 @@
+:root {
+  /* Brand Colors */
+  --color-brand-primary: #D4A373; /* Caramel */
+  --color-brand-secondary: #FAEDCD; /* Cream */
+  --color-brand-accent: #E56B6F; /* Berry Red */
+  --color-brand-dark: #6D4C41; /* Dark Brown */
+  
+  /* Neutral Colors */
+  --color-text-primary: #333333;
+  --color-text-secondary: #666666;
+  --color-bg-body: #FEFAE0; /* Soft warm background */
+  --color-bg-card: #FFFFFF;
+  --color-border: #E0E0E0;
+
+  /* Typography */
+  --font-family-base: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-size-base: 14px;
+  --font-size-lg: 16px;
+  --font-size-xl: 20px;
+  --font-size-xxl: 24px;
+  
+  /* Spacing */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  
+  /* Radius & Shadows */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
+  --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1);
+  
+  /* Transitions */
+  --transition-fast: 0.2s ease;
+  --transition-normal: 0.3s ease;
+}

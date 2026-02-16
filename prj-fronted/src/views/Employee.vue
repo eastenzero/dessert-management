@@ -1,113 +1,14 @@
-<template>
-  <div class="employee-page">
-    <h2>员工管理</h2>
-    <el-form :model="queryParams" :inline="true" label-width="80px">
-      <el-form-item label="员工姓名">
-        <el-input v-model="queryParams.name" placeholder="请输入员工姓名" @keyup.enter.native="handleQuery" />
-      </el-form-item>
-      <el-form-item label="所属部门">
-        <el-select v-model="queryParams.deptId" placeholder="请选择部门" style="width: 160px">
-          <el-option :key="0" :label="'全部'" :value="0" />
-          <el-option v-for="item in deptOptions" :key="item.id" :label="item.name" :value="item.id" />
-        </el-select>
-      </el-form-item>
-      <el-form-item>
-        <el-button type="primary" @click="handleQuery">查询</el-button>
-        <el-button @click="resetQuery">重置</el-button>
-      </el-form-item>
-    </el-form>
-
-    <el-row>
-      <el-button type="danger" @click="handleDeleteBatch">删除</el-button>
-      <el-button type="primary" @click="openCreate">新增</el-button>
-    </el-row>
-
-    <el-dialog :title="titleOp" v-model="visibleDialog" width="520px">
-      <el-form :model="employee" :rules="rules" ref="saveForm" label-width="80px">
-        <el-form-item>
-          <el-input v-model="employee.id" v-if="false" :disabled="true" />
-        </el-form-item>
-        <el-form-item label="姓名" prop="name">
-          <el-input v-model="employee.name" placeholder="请输入姓名" />
-        </el-form-item>
-        <el-form-item label="性别">
-          <el-select v-model="employee.gender" placeholder="请选择性别">
-            <el-option label="男" value="男" />
-            <el-option label="女" value="女" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="所属部门" prop="deptId">
-          <el-select v-model="employee.deptId" placeholder="请选择部门">
-            <el-option v-for="item in deptOptions" :key="item.id" :label="item.name" :value="item.id" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="联系电话" prop="phone">
-          <el-input v-model="employee.phone" placeholder="请输入联系电话" />
-        </el-form-item>
-        <el-form-item label="入职日期">
-          <el-date-picker
-            v-model="employee.hireDate"
-            type="date"
-            value-format="YYYY-MM-DD"
-            placeholder="请选择入职日期"
-            style="width: 100%"
-          />
-        </el-form-item>
-        <el-form-item label="工资">
-          <el-input v-model="employee.salary" placeholder="请输入工资" />
-        </el-form-item>
-        <el-form-item label="备注">
-          <el-input v-model="employee.descp" placeholder="请输入备注" />
-        </el-form-item>
-        <el-button type="primary" @click="save">确认</el-button>
-      </el-form>
-    </el-dialog>
-
-    <el-table style="min-height:300px" v-loading="loading" :data="list" @selection-change="handleSelectionChange">
-      <el-table-column type="selection" width="60" align="center" />
-      <el-table-column label="ID" align="center" prop="id" v-if="false" />
-      <el-table-column label="姓名" align="left" prop="name" width="120" />
-      <el-table-column label="性别" align="center" prop="gender" width="80" />
-      <el-table-column label="所属部门" align="center" width="140">
-        <template #default="scope">
-          {{ getDeptNameById(scope.row.deptId) }}
-        </template>
-      </el-table-column>
-      <el-table-column label="联系电话" align="center" prop="phone" width="160" />
-      <el-table-column label="入职日期" align="center" prop="hireDate" width="120" />
-      <el-table-column label="工资" align="center" prop="salary" width="100" />
-      <el-table-column label="备注" align="left" prop="descp" />
-      <el-table-column label="操作" align="center" width="200">
-        <template #default="scope">
-          <el-button type="primary" @click="openEdit(scope.row)">修改</el-button>
-          <el-button type="danger" @click="handleDelete(scope.row)">删除</el-button>
-        </template>
-      </el-table-column>
-    </el-table>
-
-    <el-row type="flex" justify="center" align="middle">
-      <el-pagination
-        :current-page="queryParams.pageNum"
-        :page-size="queryParams.pageSize"
-        :total="total"
-        layout="jumper, prev, pager, next, total"
-        style="text-align: center;margin-top: 20px;"
-        @current-change="handleCurrentChange"
-      />
-    </el-row>
-  </div>
-</template>
-
 <script setup>
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import * as EmployeeService from '../api/Employee'
 import * as DepartmentService from '../api/Department'
+import { Search, Refresh, Plus, Delete, Edit } from '@element-plus/icons-vue'
 
 const titleOp = ref('新增')
 const visibleDialog = ref(false)
 const employee = ref({})
-const saveForm = ref({})
+const saveForm = ref(null)
 
 const rules = {
   name: [{ required: true, message: '请输入员工姓名', trigger: ['blur', 'submit'] }],
@@ -138,13 +39,14 @@ function loadDepartments() {
 }
 
 function openCreate() {
-  titleOp.value = '新增'
+  titleOp.value = '新增员工'
   employee.value = {}
   visibleDialog.value = true
+  if(saveForm.value) saveForm.value.resetFields()
 }
 
 function openEdit(row) {
-  titleOp.value = '编辑'
+  titleOp.value = '编辑员工'
   employee.value = { ...row }
   visibleDialog.value = true
 }
@@ -155,21 +57,19 @@ function save() {
       ElMessage.warning('表单数据有问题，请先修正！')
     } else {
       const action = employee.value.id === undefined ? EmployeeService.add : EmployeeService.edit
-      action(employee)
+      action(employee.value)
         .then(resp => {
           if (resp.data.code === 200) {
-            ElMessage.success(titleOp.value + '员工成功！')
+            ElMessage.success(titleOp.value + '成功！')
             employee.value = {}
             visibleDialog.value = false
             getList()
           } else {
-            ElMessage({ message: titleOp.value + '员工失败！', type: 'error', duration: 12000 })
+            ElMessage.error(titleOp.value + '失败！')
           }
         })
         .catch(error => {
-          if (error.response) {
-            ElMessage({ message: titleOp.value + '员工异常！', type: 'error', duration: 120000 })
-          }
+           ElMessage.error(titleOp.value + '异常！')
         })
     }
   })
@@ -182,18 +82,24 @@ const queryParams = ref({
   pageNum: 1,
   pageSize: 5,
   name: null,
-  deptId: 0
+  deptId: null // Changed from 0 to null for cleaner initial state if using placeholder
 })
 
 function getList() {
   loading.value = true
-  EmployeeService.list(queryParams)
+  // Handle 0 vs null logic if backend strictly requires 0, but usually null is ignored.
+  // Original code used 0 for "all".
+  // Let's stick to 0 if null causes issues, or handle it here.
+  const params = { ...queryParams.value }
+  if (params.deptId === null) params.deptId = 0
+  
+  EmployeeService.list(ref(params))
     .then(resp => {
       list.value = resp.data.rows
       total.value = resp.data.total
     })
     .catch(() => {
-      ElMessage.error('查询员工数据失败，请检查服务端日志')
+      ElMessage.error('查询员工数据失败')
     })
     .finally(() => {
       loading.value = false
@@ -212,7 +118,7 @@ function handleQuery() {
 
 function resetQuery() {
   queryParams.value.name = null
-  queryParams.value.deptId = 0
+  queryParams.value.deptId = null
   handleQuery()
 }
 
@@ -228,7 +134,7 @@ function handleDelete(row) {
     ElMessage.warning('请先选择要删除的员工')
     return
   }
-  ElMessageBox.confirm('确认删除ID为' + ids2del + '的员工？', '警告', {
+  ElMessageBox.confirm('确认删除选中的员工？', '警告', {
     confirmButtonText: '删除',
     cancelButtonText: '取消',
     type: 'warning'
@@ -250,19 +156,163 @@ function handleDeleteBatch() {
 
 function getDeptNameById(id) {
   const item = deptOptions.value.find(d => d.id === id)
-  return item ? item.name : ''
+  return item ? item.name : 'Unknown'
 }
 
-const created = () => {
+onMounted(() => {
   loadDepartments()
   getList()
-}
-created()
+})
 </script>
 
+<template>
+  <div class="app-container slide-up">
+    <el-card class="filter-card" shadow="hover">
+      <el-form :model="queryParams" :inline="true" class="filter-form">
+        <el-form-item label="员工姓名">
+          <el-input v-model="queryParams.name" placeholder="请输入员工姓名" @keyup.enter="handleQuery" clearable />
+        </el-form-item>
+        <el-form-item label="所属部门">
+          <el-select v-model="queryParams.deptId" placeholder="全部部门" style="width: 160px" clearable>
+            <!-- <el-option :key="0" :label="'全部'" :value="0" /> handled by clearable or backend handling 0 -->
+            <el-option v-for="item in deptOptions" :key="item.id" :label="item.name" :value="item.id" />
+          </el-select>
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" :icon="Search" @click="handleQuery">查询</el-button>
+          <el-button :icon="Refresh" @click="resetQuery">重置</el-button>
+        </el-form-item>
+      </el-form>
+    </el-card>
+
+    <el-card class="table-card" shadow="hover">
+      <template #header>
+        <div class="card-header">
+          <span>员工列表</span>
+          <div class="header-actions">
+            <el-button type="primary" :icon="Plus" @click="openCreate">新增员工</el-button>
+            <el-button type="danger" :icon="Delete" @click="handleDeleteBatch" :disabled="ids.length === 0">批量删除</el-button>
+          </div>
+        </div>
+      </template>
+
+      <el-table v-loading="loading" :data="list" @selection-change="handleSelectionChange" border stripe>
+        <el-table-column type="selection" width="50" align="center" />
+        <el-table-column label="姓名" align="left" prop="name" width="120">
+             <template #default="scope">
+                <span style="font-weight: 500;">{{ scope.row.name }}</span>
+            </template>
+        </el-table-column>
+        <el-table-column label="性别" align="center" prop="gender" width="80" />
+        <el-table-column label="所属部门" align="center" width="140">
+          <template #default="scope">
+            <el-tag type="info" effect="plain">{{ getDeptNameById(scope.row.deptId) }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="联系电话" align="center" prop="phone" width="160" />
+        <el-table-column label="入职日期" align="center" prop="hireDate" width="120" />
+        <el-table-column label="工资" align="right" prop="salary" width="120">
+            <template #default="scope">
+                {{ scope.row.salary ? `¥ ${scope.row.salary}` : '-' }}
+            </template>
+        </el-table-column>
+        <el-table-column label="备注" align="left" prop="descp" min-width="150" show-overflow-tooltip/>
+        <el-table-column label="操作" align="center" width="180" fixed="right">
+          <template #default="scope">
+            <el-button type="primary" link :icon="Edit" @click="openEdit(scope.row)">编辑</el-button>
+            <el-button type="danger" link :icon="Delete" @click="handleDelete(scope.row)">删除</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+
+      <div class="pagination-container">
+        <el-pagination
+          :current-page="queryParams.pageNum"
+          :page-size="queryParams.pageSize"
+          :total="total"
+          layout="total, prev, pager, next, jumper"
+          @current-change="handleCurrentChange"
+          background 
+        />
+      </div>
+    </el-card>
+
+    <el-dialog :title="titleOp" v-model="visibleDialog" width="500px" style="border-radius: 12px;">
+      <el-form :model="employee" :rules="rules" ref="saveForm" label-width="80px">
+        <el-form-item label="姓名" prop="name">
+          <el-input v-model="employee.name" placeholder="请输入姓名" />
+        </el-form-item>
+        <el-form-item label="性别">
+          <el-select v-model="employee.gender" placeholder="请选择性别" style="width: 100%;">
+            <el-option label="男" value="男" />
+            <el-option label="女" value="女" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="所属部门" prop="deptId">
+          <el-select v-model="employee.deptId" placeholder="请选择部门" style="width: 100%;">
+            <el-option v-for="item in deptOptions" :key="item.id" :label="item.name" :value="item.id" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="联系电话" prop="phone">
+          <el-input v-model="employee.phone" placeholder="请输入联系电话" />
+        </el-form-item>
+        <el-form-item label="入职日期">
+          <el-date-picker
+            v-model="employee.hireDate"
+            type="date"
+            value-format="YYYY-MM-DD"
+            placeholder="请选择入职日期"
+            style="width: 100%"
+          />
+        </el-form-item>
+        <el-form-item label="工资">
+          <el-input v-model="employee.salary" placeholder="请输入工资" type="number">
+             <template #prefix>¥</template>
+          </el-input>
+        </el-form-item>
+        <el-form-item label="备注">
+          <el-input v-model="employee.descp" placeholder="请输入备注" type="textarea" :rows="2"/>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="visibleDialog = false">取 消</el-button>
+          <el-button type="primary" @click="save">确 定</el-button>
+        </div>
+      </template>
+    </el-dialog>
+  </div>
+</template>
+
 <style scoped>
-.employee-page {
-  max-width: 900px;
-  margin: 0 auto;
+.app-container {
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.filter-card {
+    margin-bottom: 20px;
+}
+
+.filter-form .el-form-item {
+    margin-right: 16px;
+    margin-bottom: 0;
+}
+
+.table-card {
+    min-height: 400px;
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.pagination-container {
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
 }
 </style>

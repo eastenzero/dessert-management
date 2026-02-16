@@ -7,7 +7,7 @@ sequenceDiagram
 
     Note over User, Vue: 登录流程
     User->>Vue: 输入用户名/密码并提交
-    Vue->>API: POST /login (username, password)
+    Vue->>API: POST /auth/login (username, password)
     API->>Service: verify(user)
     Service->>DB: select * from t_user where username=?
     DB-->>Service: User Entity
